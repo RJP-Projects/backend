@@ -47,6 +47,18 @@ exports.addTenantValidation = [
     check('gender').isIn(['Male', 'Female', 'Other']).withMessage('Gender must be Male, Female, or Other'),
 ];
 
+exports.validateAlert = [
+    check('alertType')
+      .notEmpty()
+      .isIn(['Warning', 'Emergency', 'Notice', 'Information'])
+      .withMessage('Invalid alert type'),
+    check('description')
+      .notEmpty()
+      .trim()
+      .isLength({ min: 5, max: 500 })
+      .withMessage('Description must be between 5 and 500 characters')
+  ];
+
 exports.validate = (req, res, next) => {
     const errors = validationResult(req);
     
