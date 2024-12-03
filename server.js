@@ -19,6 +19,7 @@ const securityProtocolsRoutes = require('./routes/securityProtocols');
 const securityGuardRoutes = require('./routes/securityGuardRoutes');
 const announcementRoutes = require('./routes/announcementRoutes');
 const importantNumberRoutes = require('./routes/importantNumberRoutes');
+const alertRoutes = require('./routes/alertRoutes');
 
 dotenv.config();
 connectDB();
@@ -44,6 +45,7 @@ app.use('/api/security-protocols', securityProtocolsRoutes);
 app.use('/api/security-guards',securityGuardRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/important-number', importantNumberRoutes);
+app.use('/api/alerts', alertRoutes);
 
 const PORT = process.env.PORT || 5000;
 
