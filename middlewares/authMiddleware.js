@@ -16,11 +16,3 @@ exports.protect = async (req, res, next) => {
         res.status(401).json({ message: 'Not authorized, token failed' });
     }
 };
-
-exports.isAdmin = (req, res, next) => {
-    if (req.user && req.user.role === 'society-manager') {
-        next();
-    } else {
-        res.status(403).json({ message: 'Access denied, only society managers can perform this action' });
-    }
-};

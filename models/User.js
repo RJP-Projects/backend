@@ -11,6 +11,8 @@ const UserSchema = new mongoose.Schema({
     city: { type: String, required: true },
     society: { type: String, required: true },
     password: { type: String, required: true },
+    GuardIds: { type: Array, ref: 'SecurityGuard'},
+    ResidentIds: { type: Array, ref: 'Resident'},
 });
 
 UserSchema.pre('save', async function (next) {

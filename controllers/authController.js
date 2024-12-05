@@ -24,8 +24,7 @@ exports.register = async (req, res) => {
             firstName: user.firstName,
             lastName: user.lastName,
             email: user.email,
-            role: user.role,
-            token: generateToken(user._id, user.role),
+            token: generateToken(user._id),
         });
 
     } catch (error) {
@@ -97,6 +96,13 @@ exports.addGuard = async (req, res) => {
             message: 'Security Guard added successfully. Password sent to the email.',
             guard,
         });
+
+        const user = await User.findById(userId);
+        if (user) {
+            user.GuardIds.push(guard._id);
+            await user.save();
+        }
+
     } catch (error) {
         console.error('Error adding guard:', error.message);
         res.status(500).json({ message: 'Server error. Please try again later.' });

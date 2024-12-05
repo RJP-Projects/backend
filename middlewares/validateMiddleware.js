@@ -31,15 +31,7 @@ exports.validateLogin = [
     }
 ];
 
-exports.addOwnerValidation = [
-    check('name').not().isEmpty().withMessage('Name is required'),
-    check('email').isEmail().withMessage('Please enter a valid email'),
-    check('phoneNumber').isLength({ min: 10 }).withMessage('Please enter a valid phone number'),
-    check('age').isInt({ min: 1 }).withMessage('Age must be a positive number'),
-    check('gender').isIn(['Male', 'Female', 'Other']).withMessage('Gender must be Male, Female, or Other'),
-];
-
-exports.addTenantValidation = [
+exports.addResidentValidation = [
     check('name').not().isEmpty().withMessage('Name is required'),
     check('email').isEmail().withMessage('Please enter a valid email'),
     check('phoneNumber').isLength({ min: 10 }).withMessage('Please enter a valid phone number'),

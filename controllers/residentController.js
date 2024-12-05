@@ -1,5 +1,8 @@
-const ResidentOwner = require('../models/ResidentOwner');
-const ResidentTenant = require('../models/ResidentTenant');
+const Resident = require('../models/Resident')
+const User = require('../models/User')
+const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
 // Select Resident Status
 exports.selectStatus = async (req, res) => {
@@ -22,30 +25,78 @@ exports.chooseRole = async (req, res) => {
     }
 };
 
-// Add Owner
-exports.addOwner = async (req, res) => {
-  try {
-    req.body.phoneNumber = req.body.phoneNumber.replace(/\D/g, '');
-    
-      const owner = new ResidentOwner(req.body);
-      await owner.save();
-      res.status(201).json({ message: 'Owner added successfully', owner });
-  } catch (error) {
-      if (error.name === 'ValidationError') {
-          return res.status(400).json({ message: 'Validation failed', error: error.message });
-      }
-      res.status(500).json({ message: error.message });
-  }
+//Add Resident
+exports.addResident = async (req, res) => {
+    const { residentType, ownerName, ownerPhone, ownerAddress, name, phoneNumber, email, age, gender, wing, unit, relation, profilePhoto, aadharCardFront, aadharCardBack, addressProof, rentAgreement, members, vehicles, residentStatus, userId} = req.body;
+    try {
+        // Generate a random password
+        const randomPassword = crypto.randomBytes(6).toString('hex');
+
+        // Create a new security guard
+        const resident = new Resident({
+            residentType, ownerName, ownerPhone,ownerAddress, name,email, phoneNumber,age, gender, wing, unit, relation, profilePhoto, aadharCardFront, aadharCardBack, addressProof, rentAgreement, members, vehicles, residentStatus, userId, password: randomPassword,
+        });
+
+        await resident.save();
+        
+        // Send email with password
+        await sendEmail(
+            email,
+            `Hello ${name},\n\nYour account has been created. Use the following password to log in:\n\nPassword: ${randomPassword}`
+        );
+
+        res.status(201).json({
+            message: 'Resident added successfully. Password sent to the email.',
+            resident,
+        });
+
+        const user = await User.findById(userId);
+        if (user) {
+            user.ResidentIds.push(resident._id);
+            await user.save();
+        }
+
+    } catch (error) {
+        console.error('Error adding resident:', error.message);
+        res.status(500).json({ message: 'Server error. Please try again later.' });
+    }
+};
+
+const sendEmail = async (email, randomPassword) => {
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.EMAIL_USER, 
+            pass: process.env.EMAIL_PASS 
+        }
+    });
+
+    const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: 'Resident Password',
+        text: `${randomPassword}`
+    };
+
+    await transporter.sendMail(mailOptions);
 };
 
 
-// Add Tenant
-exports.addTenant = async (req, res) => {
+exports.residentLogin = async (req, res) => {
     try {
-        const tenant = new ResidentTenant(req.body);
-        await tenant.save();
-        res.status(201).json({ message: 'Tenant added successfully', tenant });
+        const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).json({ error: "Email and password are required" });
+        }
+        const resident = await Resident.findOne({ email });
+
+        if (!resident) {
+            return res.status(400).json({ message: 'Invalid credentials.' });
+        }
+        res.status(200).json({ message: 'Login successful.', resident }); 
+
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('Login error:', error.message);
+        res.status(500).json({ message: 'Server error. Please try again later.' });
     }
 };
