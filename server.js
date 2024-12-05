@@ -20,12 +20,18 @@ const securityGuardRoutes = require('./routes/securityGuardRoutes');
 const announcementRoutes = require('./routes/announcementRoutes');
 const importantNumberRoutes = require('./routes/importantNumberRoutes');
 const alertRoutes = require('./routes/alertRoutes');
+const chatRoutes = require("./routes/chatRoutes");
+const http = require("http");
+const { Server } = require("socket.io");
 
 dotenv.config();
 connectDB();
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads'));
 
 app.use('/api/auth', authRoutes);
@@ -46,6 +52,26 @@ app.use('/api/security-guards',securityGuardRoutes);
 app.use('/api/announcements', announcementRoutes);
 app.use('/api/important-number', importantNumberRoutes);
 app.use('/api/alerts', alertRoutes);
+app.use("/api/chat", chatRoutes);
+
+// Socket.IO Integration
+io.on("connection", (socket) => {
+    console.log("User connected:", socket.id);
+  
+    // Real-time messaging
+    socket.on("send-message", (data) => {
+      const { from, to, message, type } = data;
+      io.to(to).emit("receive-message", { from, message, type });
+    });
+  
+    // WebRTC signaling
+    socket.on("offer", (data) => io.to(data.to).emit("offer", data));
+    socket.on("answer", (data) => io.to(data.to).emit("answer", data));
+    socket.on("ice-candidate", (data) => io.to(data.to).emit("ice-candidate", data));
+  
+    // Join specific room
+    socket.on("join-room", (roomId) => socket.join(roomId));
+  });
 
 const PORT = process.env.PORT || 5000;
 

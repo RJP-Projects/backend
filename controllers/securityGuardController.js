@@ -1,33 +1,27 @@
 const SecurityGuard = require('../models/SecurityGuard');
+const bcrypt = require('bcryptjs');
 const path = require('path');
 const fs = require('fs');
 
-// Create a new security guard
-exports.createSecurityGuard = async (req, res) => {
+exports.guardLogin = async (req, res) => {
     try {
-        const { name, phoneNumber, shift, shiftDate, shiftTime, gender } = req.body;
-        let aadhaarCard = '';
-
-        if (req.file) {
-            aadhaarCard = req.file.path;
+        const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).json({ error: "Email and password are required" });
         }
+        const guard = await SecurityGuard.findOne({ email });
 
-        const securityGuard = new SecurityGuard({
-            name,
-            phoneNumber,
-            shift,
-            shiftDate,
-            shiftTime,
-            gender,
-            aadhaarCard
-        });
+        if (!guard) {
+            return res.status(400).json({ message: 'Invalid credentials.' });
+        }
+        res.status(200).json({ message: 'Login successful.', guard }); 
 
-        await securityGuard.save();
-        res.status(201).json({ message: 'Security Guard created successfully', securityGuard });
     } catch (error) {
-        res.status(500).json({ message: 'Error creating security guard', error });
+        console.error('Login error:', error.message);
+        res.status(500).json({ message: 'Server error. Please try again later.' });
     }
 };
+
 
 // Get all security guards
 exports.getAllSecurityGuards = async (req, res) => {

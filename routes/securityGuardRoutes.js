@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const {createSecurityGuard, getAllSecurityGuards, getSecurityGuardById, updateSecurityGuard, deleteSecurityGuard} = require('../controllers/securityGuardController');
+const { getAllSecurityGuards, getSecurityGuardById, updateSecurityGuard, deleteSecurityGuard} = require('../controllers/securityGuardController');
 const { protect, isAdmin } = require('../middlewares/authMiddleware');
 
 
@@ -15,7 +15,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-router.post('/', protect, isAdmin, upload.single('aadhaarCard'), createSecurityGuard);
 router.get('/', protect, isAdmin, getAllSecurityGuards);
 router.get('/:id', protect, isAdmin, getSecurityGuardById);
 router.put('/:id', protect, isAdmin, upload.single('aadhaarCard'), updateSecurityGuard);

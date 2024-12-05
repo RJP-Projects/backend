@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Guard = require('../models/SecurityGuard');
 const generateToken = require('../utils/generateToken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
@@ -6,7 +7,7 @@ const nodemailer = require('nodemailer');
 const otpMap = new Map();
 
 exports.register = async (req, res) => {
-    const { firstName, lastName, email, phone, country, state, city, society, password, role } = req.body;
+    const { firstName, lastName, email, phone, country, state, city, society, password } = req.body;
 
     try {
         const userExists = await User.findOne({ email });
@@ -15,7 +16,7 @@ exports.register = async (req, res) => {
         }
 
         const user = await User.create({
-            firstName, lastName, email, phone, country, state, city, society, password, role
+            firstName, lastName, email, phone, country, state, city, society, password
         });
 
         res.status(201).json({
@@ -51,14 +52,13 @@ exports.login = async (req, res) => {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
-        const token = generateToken(user._id, user.role);
+        const token = generateToken(user._id);
         return res.status(200).json({
             _id: user._id,
             firstName: user.firstName,
             lastName: user.lastName,
             email: user.email,
             phone: user.phone,
-            role: user.role,
             token: token,
         });
     } catch (error) {
@@ -66,7 +66,42 @@ exports.login = async (req, res) => {
         return res.status(500).json({ message: error.message });
     }
 };
+exports.addGuard = async (req, res) => {
+    const { name, email, shift, shiftDate, shiftTime, gender, userId} = req.body;
 
+    try {
+        // Generate a random password
+        const randomPassword = crypto.randomBytes(6).toString('hex');
+
+        // Create a new security guard
+        const guard = new Guard({
+            name,
+            email,
+            shift,
+            shiftDate,
+            shiftTime,
+            gender,
+            userId,
+            password: randomPassword,
+        });
+
+        await guard.save();
+
+        // Send email with password
+        await sendEmail(
+            email,
+            `Hello ${name},\n\nYour account has been created. Use the following password to log in:\n\nPassword: ${randomPassword}`
+        );
+
+        res.status(201).json({
+            message: 'Security Guard added successfully. Password sent to the email.',
+            guard,
+        });
+    } catch (error) {
+        console.error('Error adding guard:', error.message);
+        res.status(500).json({ message: 'Server error. Please try again later.' });
+    }
+};
 
 // Sending OTP via email
 exports.sendOTP = async (req, res) => {
@@ -104,8 +139,8 @@ const sendEmail = async (email, otp) => {
     const mailOptions = {
         from: process.env.EMAIL_USER,
         to: email,
-        subject: 'DashStack Password Reset OTP',
-        text: `Your OTP is: ${otp}`
+        subject: 'DashStack Password',
+        text: `${otp}`
     };
 
     await transporter.sendMail(mailOptions);
